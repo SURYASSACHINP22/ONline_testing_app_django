@@ -1,0 +1,32 @@
+{% extends 'main.html'%}
+
+{% block titel %} Candidate Registration Form{% endblock %}
+
+{% block top %}
+    <a href="{% url 'OTS:welcome' %}">Home</a>
+    <a href="{% url 'OTS:login' %}">Login</a>
+{% endblock %}
+
+{% block content %}
+    <h1>Candidate Registration Form</h1>
+    <div class="all_forms">
+        <form method="post" action="{% url 'OTS:storeCandidate' %}">
+            <!--  This is a security measure to prevent CSRF attacks always used when post methid is used-->
+            {% csrf_token %}
+            <label for="username">Username:</label>
+            <input type="text" name="username" required>
+            <lable for="password">Password:</lable>
+            <input type="password" name="password" required>
+
+            <lebel for="name">name:</lebel>
+            <input type="text" name="name" required>
+
+            <input type="submit" value="Submit" required>
+            <input type="reset" value="Reset" required>
+
+            {{ form.as_p }}
+        </form>
+        already have an account? <a href="{% url 'OTS:login' %}">Login</a>
+
+    </div>
+{% endblock %}
