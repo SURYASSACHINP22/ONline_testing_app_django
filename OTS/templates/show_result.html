@@ -1,0 +1,37 @@
+{%extends 'main.html'%}
+
+{% block title %}OTS-results{% endblock %}
+
+{% block top %}   
+<a href="{% url 'OTS:home' %}">home</a>
+    <a href="{% url 'OTS:logout' %}">Logout</a> 
+{% endblock %}
+
+
+{% block content %}
+    <table >
+        <tr>
+            <th colspan="5">Results</th>
+        <tr>
+            <th>date</th>
+            <th>attempt</th>
+            <th>right</th>
+            <th>wrong</th>
+            <th>points</th>
+        </tr>
+        {% for r in results %}
+            <tr>
+                <td>{{ r.date }}</td>
+                <td>{{ r.attempt }}</td>
+                <td>{{ r.right }}</td>
+                <td>{{ r.wrong }}</td>
+                <td>{{ r.points }}</td>
+            </tr>
+        {% endfor %}
+        {% if not results %}
+            <tr>
+                <td colspan="5">No results available</td>
+            </tr>
+        {% endif %}
+    </table>
+{% endblock %}

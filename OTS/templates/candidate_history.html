@@ -1,0 +1,34 @@
+{%extends 'main.html'%}
+
+{% block title %}Welcome To OTS{% endblock %}
+
+{% block top %}
+<a href="{% url 'OTS:home' %}">home</a>
+    <a href="{% url 'OTS:logout' %}">Login</a>
+{% endblock %}
+
+
+{% block content %}
+    <h1>your report card</h1>
+    <h2>hi <span class="special">{{candidate.name}}</span>, you have attempted in total <span class="special">{{candidate.test_attempted}}</span> tests and you have scored <span class="special">{{candidate.points}}</span> on the scale of 10</h2>
+    <table >
+        <tr>
+            <th colspan="5">Results</th>
+        <tr>
+            <th>date</th>
+            <th>attempt</th>
+            <th>right</th>
+            <th>wrong</th>
+            <th>points</th>
+        </tr>
+        {% for r in results %}
+            <tr>
+                <td>{{ r.date }}</td>
+                <td>{{ r.attempt }}</td>
+                <td>{{ r.right }}</td>
+                <td>{{ r.wrong }}</td>
+                <td>{{ r.points }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock %}
