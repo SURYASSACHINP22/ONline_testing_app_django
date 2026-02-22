@@ -1,32 +1,43 @@
-
 {% extends 'main.html' %}
 
-{% block title %}OTS-test_paper{% endblock %}
+{% block title %}Test – OTS{% endblock %}
 
 {% block top %}
+    <a href="{% url 'OTS:home' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Home</a>
+    <a href="{% url 'OTS:logout' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Log out</a>
 {% endblock %}
 
 {% block content %}
-    <form action="{% url 'OTS:calculateTest' %}" method="POST">
-        {% csrf_token %}
-        {% for question in questions %}
-        <div class="questions">
-            <input type="hidden" name="q{{ question.qid }}" value="{{ question.qid }}">
-            <strong>{{ question.que }}</strong><br>
-        </div>
-        <div class="options">
-            <input type="radio" name="q{{ question.qid }}" value="A"> {{ question.a }}<br>
-        </div>
-        <div class="options">
-            <input type="radio" name="q{{ question.qid }}" value="B"> {{ question.b }}<br>
-        </div>
-        <div class="options">
-            <input type="radio" name="q{{ question.qid }}" value="C"> {{ question.c }}<br>
-        </div>
-        <div class="options">
-            <input type="radio" name="q{{ question.qid }}" value="D"> {{ question.d }}<br>
-        </div>
-        {% endfor %}
-        <div><input type="submit" value="Submit"></div>
-    </form>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <form action="{% url 'OTS:calculateTest' %}" method="POST" class="p-6 sm:p-8">
+            {% csrf_token %}
+            {% for question in questions %}
+            <div class="mb-8 pb-8 {% if not forloop.last %}border-b border-slate-100{% endif %}">
+                <input type="hidden" name="qno{{ question.qid }}" value="{{ question.qid }}">
+                <p class="text-slate-800 font-medium mb-4">{{ question.que }}</p>
+                <div class="space-y-2">
+                    <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50/30 cursor-pointer transition has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
+                        <input type="radio" name="q{{ question.qid }}" value="A" class="w-4 h-4 text-primary-600 focus:ring-primary-500">
+                        <span>{{ question.a }}</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50/30 cursor-pointer transition has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
+                        <input type="radio" name="q{{ question.qid }}" value="B" class="w-4 h-4 text-primary-600 focus:ring-primary-500">
+                        <span>{{ question.b }}</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50/30 cursor-pointer transition has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
+                        <input type="radio" name="q{{ question.qid }}" value="C" class="w-4 h-4 text-primary-600 focus:ring-primary-500">
+                        <span>{{ question.c }}</span>
+                    </label>
+                    <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-primary-300 hover:bg-primary-50/30 cursor-pointer transition has-[:checked]:border-primary-500 has-[:checked]:bg-primary-50">
+                        <input type="radio" name="q{{ question.qid }}" value="D" class="w-4 h-4 text-primary-600 focus:ring-primary-500">
+                        <span>{{ question.d }}</span>
+                    </label>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="pt-4">
+                <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition shadow-sm">Submit answers</button>
+            </div>
+        </form>
+    </div>
 {% endblock %}

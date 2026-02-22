@@ -1,0 +1,27 @@
+{% extends 'main.html' %}
+
+{% block title %}Delete account – OTS{% endblock %}
+
+{% block top %}
+    <a href="{% url 'OTS:home' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Home</a>
+    <a href="{% url 'OTS:logout' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Log out</a>
+{% endblock %}
+
+{% block content %}
+    <div class="max-w-lg mx-auto">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <h1 class="text-xl font-semibold text-slate-800 mb-4">Delete my account</h1>
+            <p class="text-slate-600 mb-4"><strong>This will permanently delete your profile and all your data.</strong></p>
+            <ul class="list-disc list-inside text-slate-600 space-y-1 mb-6">
+                <li>Your account ({{ request.session.name }}) will be removed.</li>
+                <li>All your test history and results will be deleted.</li>
+                <li>This action cannot be undone.</li>
+            </ul>
+            <form method="post" action="{% url 'OTS:deleteAccount' %}" onsubmit="return confirm('Are you sure you want to delete your account and all data?');" class="flex flex-wrap gap-3">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition">Delete my account and all data</button>
+                <a href="{% url 'OTS:home' %}" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition">Cancel</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

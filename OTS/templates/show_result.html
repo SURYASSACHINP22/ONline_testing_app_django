@@ -1,37 +1,47 @@
-{%extends 'main.html'%}
+{% extends 'main.html' %}
 
-{% block title %}OTS-results{% endblock %}
+{% block title %}Result – OTS{% endblock %}
 
-{% block top %}   
-<a href="{% url 'OTS:home' %}">home</a>
-    <a href="{% url 'OTS:logout' %}">Logout</a> 
+{% block top %}
+    <a href="{% url 'OTS:home' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Home</a>
+    <a href="{% url 'OTS:logout' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Log out</a>
 {% endblock %}
 
-
 {% block content %}
-    <table >
-        <tr>
-            <th colspan="5">Results</th>
-        <tr>
-            <th>date</th>
-            <th>attempt</th>
-            <th>right</th>
-            <th>wrong</th>
-            <th>points</th>
-        </tr>
-        {% for r in results %}
-            <tr>
-                <td>{{ r.date }}</td>
-                <td>{{ r.attempt }}</td>
-                <td>{{ r.right }}</td>
-                <td>{{ r.wrong }}</td>
-                <td>{{ r.points }}</td>
-            </tr>
-        {% endfor %}
-        {% if not results %}
-            <tr>
-                <td colspan="5">No results available</td>
-            </tr>
-        {% endif %}
-    </table>
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200">
+            <h1 class="text-lg font-semibold text-slate-800">Latest result</h1>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Attempt</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Right</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Wrong</th>
+                        <th class="text-left px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in results %}
+                    <tr class="border-b border-slate-100 hover:bg-slate-50/50">
+                        <td class="px-6 py-3 text-slate-700">{{ r.date }}</td>
+                        <td class="px-6 py-3 text-slate-700">{{ r.attempt }}</td>
+                        <td class="px-6 py-3 text-slate-700">{{ r.right }}</td>
+                        <td class="px-6 py-3 text-slate-700">{{ r.wrong }}</td>
+                        <td class="px-6 py-3 font-medium text-slate-800">{{ r.points }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not results %}
+                    <tr><td colspan="5" class="px-6 py-8 text-slate-500 text-center">No results available</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex gap-2">
+            <a href="{% url 'OTS:home' %}" class="text-primary-600 font-medium hover:underline">Back to home</a>
+            <a href="{% url 'OTS:testHistory' %}" class="text-primary-600 font-medium hover:underline">View all history</a>
+        </div>
+    </div>
 {% endblock %}
