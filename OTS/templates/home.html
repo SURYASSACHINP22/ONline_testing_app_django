@@ -1,26 +1,41 @@
-{%extends 'main.html'%}
+{% extends 'main.html' %}
 
-{% block title %}OTS-home{% endblock %}
+{% block title %}Home – OTS{% endblock %}
 
 {% block top %}
-    <a href="{% url 'OTS:home' %}">SignUp</a>
-    
-    <a href="{% url 'OTS:logout' %}">Logout</a>
+    <a href="{% url 'OTS:home' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Home</a>
+    <a href="{% url 'OTS:logout' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Log out</a>
 {% endblock %}
 
 {% block content %}
-    <h1>Welcome {{request.session.name}}, to the Online Testing System</h1>
-    <div class="button-link">
-        <a href="{% url 'OTS:testpaper' %}?n=1">Test of 1 question</a>
-    </div>
-    <div class="button-link">
-        <a href="{% url 'OTS:testpaper' %}?n=3">Test of 3 questions</a>
-    </div>
-    <div class="button-link">
-        <a href="{% url 'OTS:testpaper' %}?n=5">Test of 5 questions</a>
-    </div>  
-    <div class="button-link">
-        <a href="{% url 'OTS:testHistory' %}">Test History</a>
-    </div>      
+    <h1 class="text-2xl font-bold text-slate-800 mb-1">Welcome, {{ request.session.name }}</h1>
+    <p class="text-slate-600 mb-6">Choose a test or manage your account.</p>
 
+    {% if flash_message %}
+        <div class="mb-6 p-4 rounded-xl bg-primary-50 text-primary-800 border border-primary-200">{{ flash_message }}</div>
+    {% endif %}
+
+    <section class="mb-8">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Tests</h2>
+        <div class="space-y-2">
+            {% for n in allowed_question_counts %}
+                <a href="{% url 'OTS:testpaper' %}?n={{ n }}" class="block w-full text-left px-4 py-3 rounded-xl bg-white border border-slate-200 hover:border-primary-300 hover:bg-primary-50/50 transition font-medium text-slate-800 shadow-sm">
+                    Test of {{ n }} question{{ n|pluralize }}
+                </a>
+            {% empty %}
+                <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+                    No test types allowed. <a href="{% url 'OTS:membership' %}" class="font-medium underline">Choose a membership plan</a>.
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="mb-8">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Account</h2>
+        <div class="flex flex-wrap gap-2">
+            <a href="{% url 'OTS:testHistory' %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 transition font-medium text-slate-700 shadow-sm">Test history</a>
+            <a href="{% url 'OTS:membership' %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 transition font-medium text-slate-700 shadow-sm">Membership plans</a>
+            <a href="{% url 'OTS:deleteAccount' %}" class="inline-flex items-center px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition font-medium">Delete account</a>
+        </div>
+    </section>
 {% endblock %}

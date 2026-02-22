@@ -1,27 +1,33 @@
-{% extends 'main.html'%}
+{% extends 'main.html' %}
 
-{% block titel %}OTS-Registration Status {% endblock %}
+{% block title %}Registration – OTS{% endblock %}
 
 {% block top %}
-    <a href="{% url 'OTS:registrationForm' %}">Home</a>
-    <a href="{% url 'OTS:login' %}">Login</a>
+    <a href="{% url 'OTS:registrationForm' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Home</a>
+    <a href="{% url 'OTS:login' %}" class="text-slate-600 hover:text-primary-600 font-medium transition">Log in</a>
 {% endblock %}
 
 {% block content %}
-    {% if userStatus == 1%}
-    <div class="userStatus">
-        sorry, User is already registered try to find new username  <br>
-        <a href="{% url 'OTS:registrationForm' %}">Go Back</a>
+    <div class="max-w-md mx-auto">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            {% if userStatus == 1 %}
+                <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
+                    <p class="font-medium">Username already taken</p>
+                    <p class="text-sm mt-1">Please choose a different username.</p>
+                    <a href="{% url 'OTS:registrationForm' %}" class="inline-block mt-3 text-primary-600 font-medium hover:underline">Try again</a>
+                </div>
+            {% elif userStatus == 2 %}
+                <div class="p-4 rounded-xl bg-primary-50 border border-primary-200 text-primary-800">
+                    <p class="font-medium">Account created</p>
+                    <p class="text-sm mt-1">You can log in now.</p>
+                    <a href="{% url 'OTS:login' %}" class="inline-block mt-3 text-primary-600 font-medium hover:underline">Log in</a>
+                </div>
+            {% elif userStatus == 3 %}
+                <div class="p-4 rounded-xl bg-slate-100 border border-slate-200 text-slate-700">
+                    <p class="font-medium">Invalid request</p>
+                    <a href="{% url 'OTS:registrationForm' %}" class="inline-block mt-3 text-primary-600 font-medium hover:underline">Go back</a>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    {% elif userStatus == 2%}
-    <div class="userStatus">
-        congratulations!! , USer created successfuly  <br>
-        <a href="{% url 'OTS:login' %}">Login</a>
-    </div>
-    {% elif userStatus == 3%}   
-    <div class="userStatus">
-        Oops Baby!!, Improper Request<br>
-        <a href="{% url 'OTS:registrationForm' %}">Go Back</a>
-
-    {% endif%}
 {% endblock %}
