@@ -36,7 +36,7 @@ class MembershipPlan(models.Model):
 
 class Candidate(models.Model):
     username = models.CharField(primary_key=True, max_length=20)
-    password = models.CharField(null=False, max_length=20)
+    password = models.CharField(null=False, max_length=128)
     name = models.CharField(null=False, max_length=30)
     test_attempted = models.IntegerField(default=0)
     points = models.FloatField(default=0.0)

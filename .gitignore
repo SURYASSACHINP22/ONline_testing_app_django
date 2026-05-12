@@ -18,3 +18,8 @@ staticfiles/
 .vscode/
 *.swp
 *.swo
+
+# Environment files
+.env
+.env.*
+!.env.example

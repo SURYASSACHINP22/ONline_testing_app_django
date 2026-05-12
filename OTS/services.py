@@ -2,6 +2,7 @@
 LLD: Service layer – business logic moved out of views for clarity and testability.
 """
 from OTS.models import Candidate, Question, Result, MembershipPlan
+from django.contrib.auth.hashers import make_password, check_password
 
 
 def get_allowed_question_counts(candidate):
@@ -104,7 +105,15 @@ def assign_membership_plan(candidate_username, plan_id):
 def authenticate_candidate(username, password):
     """Return Candidate if credentials match, else None."""
     candidate = Candidate.objects.filter(username=username).first()
-    if candidate and candidate.password == password:
+    if not candidate:
+        return None
+
+    # Backward compatibility: auto-upgrade old plain-text passwords on successful login.
+    if check_password(password, candidate.password):
+        return candidate
+    if candidate.password == password:
+        candidate.password = make_password(password)
+        candidate.save(update_fields=['password'])
         return candidate
     return None
 
@@ -119,6 +128,6 @@ def register_candidate(username, password, name, plan_id=None):
     plan = None
     if plan_id:
         plan = MembershipPlan.objects.filter(pk=plan_id, is_active=True).first()
-    candidate = Candidate(username=username, password=password, name=name, membership_plan=plan)
+    candidate = Candidate(username=username, password=make_password(password), name=name, membership_plan=plan)
     candidate.save()
     return True, 2
