@@ -30,19 +30,32 @@ A Django-based platform for managing and conducting online tests. Candidates reg
    venv\Scripts\activate   # On Windows
    ```
 
-3. **Install dependencies & run migrations**
+3. **Install dependencies**
    ```bash
-   pip install django
+   pip install -r requirements.txt
+   ```
+
+4. **Create local environment file**
+   ```bash
+   copy .env.example .env
+   ```
+   Update `.env` values as needed (keep `DJANGO_DEBUG=True` for local development).
+
+5. **Run migrations and create admin user**
+   ```bash
    python manage.py migrate
    python manage.py createsuperuser   # For admin access
    ```
 
-4. **Run the server**
+6. **Run the server**
    ```bash
    python manage.py runserver
    ```
 
-5. Open **http://127.0.0.1:8000/** (redirects to OTS) or **http://127.0.0.1:8000/admin/** for admin.
+7. Open:
+   - **http://127.0.0.1:8000/** (redirects to OTS)
+   - **http://127.0.0.1:8000/admin/** (admin panel)
+   - **http://127.0.0.1:8000/api/schema/swagger-ui/** (API docs)
 
 ---
 
