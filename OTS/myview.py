@@ -1,3 +1,17 @@
+"""
+Server-rendered views. After login/register, JWTs are stored in cookies (layer 2 — HttpOnly).
+
+Flow:
+  loginView / candidateRegistration → services.authenticate_candidate or register_candidate
+  → RefreshToken.for_user(candidate) → _set_auth_cookies(response, refresh).
+
+Why httponly=True: document.cookie cannot read these names, so typical XSS cannot steal tokens.
+Browser still sends them on same-site requests; OTS.authentication.CandidateJWTAuthentication and
+OTS.authentication.get_candidate_username_from_request read COOKIES['access_token'] for
+HTML views (see OTS.decorators.candidate_login_required) and for DRF when no Bearer header.
+
+API clients can instead keep tokens in memory and send Authorization: Bearer (see api_views).
+"""
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.conf import settings
@@ -9,6 +23,14 @@ import random
 
 
 def _set_auth_cookies(response, refresh):
+    """
+    Attach JWT pair to HttpOnly cookies on this HttpResponse.
+
+    Called from: candidateRegistration (success), loginView (success).
+    Cleared in: logoutView, deleteAccountView (via delete_cookie).
+
+    secure=settings.JWT_COOKIE_SECURE: in production (.env) set True so cookies only go over HTTPS.
+    """
     response.set_cookie(
         'access_token',
         str(refresh.access_token),
@@ -52,7 +74,7 @@ def candidateRegistration(request):
         candidate = Candidate.objects.filter(username=username).first()
         refresh = RefreshToken.for_user(candidate)
         response = HttpResponseRedirect('home')
-        _set_auth_cookies(response, refresh)
+        _set_auth_cookies(response, refresh)  # layer 2: JWT in HttpOnly cookies for subsequent HTML pages
         return response
     return render(request, 'registration.html', {'userStatus': user_status})
 
@@ -65,7 +87,7 @@ def loginView(request):
         if candidate:
             refresh = RefreshToken.for_user(candidate)
             response = HttpResponseRedirect('home')
-            _set_auth_cookies(response, refresh)
+            _set_auth_cookies(response, refresh)  # layer 2: same cookie strategy as registration
             return response
         return render(request, 'login.html', {'loginError': 'Invalid username or password'})
     return render(request, 'login.html')

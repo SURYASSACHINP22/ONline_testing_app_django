@@ -2,6 +2,12 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
 def is_admin_user(user):
+    """
+    True for Django staff/superuser (ModelBackend / session admin).
+
+    Used by api_views to pick serializers (QuestionSerializer vs QuestionAdminSerializer — layer 3)
+    and to widen querysets for admins.
+    """
     return bool(user and getattr(user, 'is_authenticated', False) and (
         getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False)
     ))

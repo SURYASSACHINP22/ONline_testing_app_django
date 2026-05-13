@@ -8,6 +8,14 @@ from OTS import services
 
 
 class SecurityHardeningTests(TestCase):
+    """
+    Layer 5 — regression tests for security properties implemented across OTS:
+
+      test_register_hashes_password          → services.register_candidate + make_password
+      test_login_upgrades_legacy_plaintext_password → services.authenticate_candidate legacy branch
+      test_candidate_cannot_edit_restricted_fields  → CandidateViewSet.partial_update (layer 4)
+      test_question_answer_not_exposed_to_candidate → QuestionSerializer (layer 3) via GET .../questions/
+    """
     def setUp(self):
         self.login_username = 'sachin'
         self.login_password = f"fixture-{secrets.token_hex(12)}"
@@ -26,6 +34,7 @@ class SecurityHardeningTests(TestCase):
         self.client = APIClient()
 
     def _login_candidate(self):
+        """Obtain JWT via REST login; sets Bearer on APIClient (same path production SPAs use)."""
         response = self.client.post(
             '/OTS/api/candidates/login/',
             {'username': self.login_username, 'password': self.login_password},
@@ -36,6 +45,7 @@ class SecurityHardeningTests(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')
 
     def test_register_hashes_password(self):
+        """Layer 1: new rows must not store plaintext; check_password validates against stored hash."""
         register_password = f"fixture-{secrets.token_hex(12)}"
         ok, _ = services.register_candidate('u1', register_password, 'User One')
         self.assertTrue(ok)
@@ -44,6 +54,7 @@ class SecurityHardeningTests(TestCase):
         self.assertTrue(check_password(register_password, created.password))
 
     def test_login_upgrades_legacy_plaintext_password(self):
+        """Layer 1: DB still plain → authenticate_candidate upgrades to hash on first successful login."""
         legacy_password = f"fixture-{secrets.token_hex(12)}"
         legacy = Candidate.objects.create(username='legacy', password=legacy_password, name='Legacy')
         authenticated = services.authenticate_candidate('legacy', legacy_password)
@@ -53,11 +64,13 @@ class SecurityHardeningTests(TestCase):
         self.assertTrue(check_password(legacy_password, legacy.password))
 
     def test_candidate_cannot_edit_restricted_fields(self):
+        """Layer 4: PATCH with {'points': ...} must fail before any serializer write (400 from view)."""
         self._login_candidate()
         response = self.client.patch(f"/OTS/api/candidates/{self.login_username}/", {'points': 999}, format='json')
         self.assertEqual(response.status_code, 400)
 
     def test_question_answer_not_exposed_to_candidate(self):
+        """Layer 3: list payload must not contain 'ans' (QuestionSerializer excludes it for non-admin)."""
         Question.objects.create(que='Q?', a='A1', b='B1', c='C1', d='D1', ans='A')
         self._login_candidate()
         response = self.client.get('/OTS/api/questions/')

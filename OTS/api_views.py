@@ -1,3 +1,13 @@
+"""
+REST API viewsets mounted under /OTS/api/ (see OTS.urls DefaultRouter).
+
+Security-related flows in this module:
+  • CandidateViewSet.login / register → services.authenticate_candidate / register_candidate
+    (password hashing — services.py), then RefreshToken.for_user → JSON body includes tokens
+    (SPA/mobile); browser HTML flow uses cookies from myview._set_auth_cookies instead.
+  • CandidateViewSet.partial_update → self-service only {name}; rejects points etc. (layer 4).
+  • QuestionViewSet → QuestionSerializer vs QuestionAdminSerializer by admin flag (layer 3).
+"""
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -20,6 +30,16 @@ from .permissions import IsAdminUserCustom, IsAdminOrReadOnly, is_admin_user
 from . import services
 
 class CandidateViewSet(viewsets.ModelViewSet):
+    """
+    /OTS/api/candidates/
+
+    Auth: DRF resolves request.user via settings.REST_FRAMEWORK DEFAULT_AUTHENTICATION_CLASSES
+    (Session → CandidateJWTAuthentication → JWTAuthentication). CandidateJWT reads Bearer header
+    or HttpOnly access_token cookie (same token shape from login).
+
+    Self-service PATCH: partial_update below restricts body keys to {'name'} only so clients
+    cannot inflate points or test_attempted even if they bypass serializer fields.
+    """
     queryset = Candidate.objects.all()
     serializer_class = CandidateSerializer
     permission_classes = [IsAuthenticated]
@@ -59,6 +79,16 @@ class CandidateViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
+        """
+        PATCH /OTS/api/candidates/<username>/
+
+        Non-admin: defense in depth (layer 4):
+          1. Only the logged-in candidate's own row (username match).
+          2. Reject if JSON keys are not a subset of {'name'} — blocks {'points': 999} etc.
+          3. CandidateSelfUpdateSerializer then only allows 'name' field through to the model.
+
+        Admin: delegates to ModelViewSet.partial_update (CandidateAdminSerializer).
+        """
         if not is_admin_user(request.user):
             obj = self.get_object()
             if obj.username != getattr(request.user, 'username', None):
@@ -78,6 +108,11 @@ class CandidateViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
+        """
+        POST .../candidates/login/ — body: username, password.
+        services.authenticate_candidate (hash + legacy upgrade) → RefreshToken.for_user(candidate).
+        Response includes access/refresh in JSON (API clients); not the same as myview cookies.
+        """
         username = request.data.get('username')
         password = request.data.get('password')
         candidate = services.authenticate_candidate(username, password)
@@ -92,6 +127,7 @@ class CandidateViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
+        """POST .../candidates/register/ — services.register_candidate (hashed password) → JWT in response."""
         success, message = services.register_candidate(
             username=request.data.get('username'),
             password=request.data.get('password'),
@@ -123,6 +159,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
 
     def get_serializer_class(self):
+        # Admin/staff → QuestionAdminSerializer (includes ans). Candidate → QuestionSerializer (no ans).
         if is_admin_user(self.request.user):
             return QuestionAdminSerializer
         return QuestionSerializer
