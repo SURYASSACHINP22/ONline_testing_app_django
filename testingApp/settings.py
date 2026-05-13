@@ -141,13 +141,13 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = os.getenv('SECURE_HSTS_INCLUDE_SUBDOMAINS', 'Fa
 SECURE_HSTS_PRELOAD = os.getenv('SECURE_HSTS_PRELOAD', 'False').lower() == 'true'
 X_FRAME_OPTIONS = 'DENY'
 
-# Custom authentication backend for Candidate model
+# Custom authentication backend for Candidate model (password check → services.authenticate_candidate)
 AUTHENTICATION_BACKENDS = [
     'OTS.authentication.CandidateBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# Django REST Framework settings
+# DRF: try Session first, then candidate JWT (Bearer or HttpOnly access_token cookie), then stock JWT.
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -172,7 +172,7 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# JWT settings
+# JWT claims: user_id in token maps to Candidate.username (Candidate's PK) for SimpleJWT.
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),

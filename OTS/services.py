@@ -1,5 +1,17 @@
 """
 LLD: Service layer – business logic moved out of views for clarity and testability.
+
+Security – password hashing (layer 1)
+--------------------------------------
+- New accounts: register_candidate() always stores django.contrib.auth.hashers.make_password()
+  (PBKDF2-SHA256 by default in Django) — see register_candidate below.
+- Logins: authenticate_candidate() is the single gate used by:
+    • OTS.api_views.CandidateViewSet.login (REST)
+    • OTS.myview.loginView / candidateRegistration (HTML)
+    • OTS.authentication.CandidateBackend (Django auth backend for JWT /admin flows)
+- Legacy rows may still hold plain text in Candidate.password; on first successful login,
+  authenticate_candidate rehashes and saves (same function — no duplicate logic).
+  Regression: OTS.tests.SecurityHardeningTests.test_login_upgrades_legacy_plaintext_password
 """
 from OTS.models import Candidate, Question, Result, MembershipPlan
 from django.contrib.auth.hashers import make_password, check_password
@@ -103,14 +115,28 @@ def assign_membership_plan(candidate_username, plan_id):
 
 
 def authenticate_candidate(username, password):
-    """Return Candidate if credentials match, else None."""
+    """
+    Return Candidate if credentials match, else None.
+
+    Flow:
+      1. Load Candidate by username.
+      2. If password matches Django hash → return (already secure).
+      3. Else if stored value equals raw password (legacy plain text) → rehash with
+         make_password(), save, return — next login uses step 2 only.
+      4. Else → wrong password, return None.
+
+    Callers (any change here affects all of them):
+      OTS.api_views.CandidateViewSet.login, OTS.myview.loginView,
+      OTS.authentication.CandidateBackend.authenticate
+    """
     candidate = Candidate.objects.filter(username=username).first()
     if not candidate:
         return None
 
-    # Backward compatibility: auto-upgrade old plain-text passwords on successful login.
+    # Path A: already PBKDF2 (or other Django hasher) — check_password verifies safely.
     if check_password(password, candidate.password):
         return candidate
+    # Path B: legacy plain text in DB — migrate in place on first successful login only.
     if candidate.password == password:
         candidate.password = make_password(password)
         candidate.save(update_fields=['password'])
@@ -122,6 +148,9 @@ def register_candidate(username, password, name, plan_id=None):
     """
     Register a new candidate. Returns (success: bool, user_status: int).
     user_status: 1 = username exists, 2 = created, 3 = invalid (e.g. not POST).
+
+    Password is never stored raw: make_password() before Candidate.save().
+    Callers: OTS.api_views.CandidateViewSet.register, OTS.myview.candidateRegistration
     """
     if Candidate.objects.filter(username=username).exists():
         return False, 1

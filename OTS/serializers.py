@@ -1,3 +1,12 @@
+"""
+DRF serializers: control which model fields are exposed or writable on the API.
+
+Security ties:
+  • QuestionSerializer — omits Question.ans for non-admin list/detail (layer 3).
+  • CandidateSerializer / CandidateSelfUpdateSerializer — points & test_attempted not writable
+    by self; partial_update in api_views enforces only {name} before save (layer 4).
+  • QuestionAdminSerializer — full Question including ans; only used when permissions.is_admin_user.
+"""
 from rest_framework import serializers
 from .models import Candidate, Question, Result, MembershipPlan
 
@@ -35,12 +44,18 @@ class CandidateAdminSerializer(serializers.ModelSerializer):
 
 
 class CandidateSelfUpdateSerializer(serializers.ModelSerializer):
+    """Used only for PATCH self-profile; fields limited to name — see CandidateViewSet.partial_update."""
     class Meta:
         model = Candidate
         fields = ['name']
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    """
+    Public/candidate API shape for Question. Intentionally omits 'ans' so list/retrieve cannot
+    leak correct answers (layer 3). Admin uses QuestionAdminSerializer instead — chosen in
+    QuestionViewSet.get_serializer_class() when is_admin_user(request.user).
+    """
     class Meta:
         model = Question
         fields = ['qid', 'que', 'a', 'b', 'c', 'd']  # Exclude 'ans' for security

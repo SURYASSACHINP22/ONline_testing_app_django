@@ -1,3 +1,12 @@
+"""
+Auth glue between Candidate model, Django, DRF, and JWT.
+
+- CandidateBackend + CandidateUser: Django AUTHENTICATION_BACKENDS; password path calls
+  services.authenticate_candidate (hashing / legacy upgrade — services.py).
+- CandidateJWTAuthentication: DRF; reads JWT from Bearer header or HttpOnly access_token cookie
+  (set in myview._set_auth_cookies). Produces request.user as CandidateUser for viewsets.
+- get_candidate_username_from_request: shared decode for HTML @candidate_login_required.
+"""
 from django.conf import settings
 from django.contrib.auth.backends import BaseBackend
 from rest_framework import authentication
@@ -16,7 +25,7 @@ class CandidateBackend(BaseBackend):
 
         candidate = services.authenticate_candidate(username, password)
         if candidate:
-            # Create a mock user object that JWT can work with
+            # Wrap DB row as a minimal "user" for Django admin / JWT user_id claims.
             return CandidateUser(candidate)
         return None
 
@@ -89,7 +98,12 @@ def _decode_token_and_get_username(token):
 
 
 def get_candidate_username_from_request(request):
-    """Return a username from a valid JWT in the Authorization header or access_token cookie."""
+    """
+    Decode JWT from Authorization: Bearer <token> OR cookie access_token (HttpOnly from myview).
+
+    Used by: OTS.decorators.candidate_login_required (HTML gate).
+    Same lookup order as CandidateJWTAuthentication.authenticate (DRF API gate).
+    """
     token = None
     auth_header = request.META.get('HTTP_AUTHORIZATION', '')
     if auth_header.startswith('Bearer '):
@@ -101,7 +115,13 @@ def get_candidate_username_from_request(request):
 
 class CandidateJWTAuthentication(authentication.BaseAuthentication):
     """
-    DRF authentication for Candidate JWTs from Authorization header or access_token cookie.
+    DRF entry point: sets request.user to CandidateUser when a valid access JWT is present.
+
+    Token sources (same as get_candidate_username_from_request):
+      1) Authorization: Bearer …  — typical for APIClient / SPA in memory
+      2) Cookie access_token      — set by myview._set_auth_cookies after HTML login
+
+    Validates signature via SIMPLE_JWT / SECRET_KEY, then loads Candidate by username from payload.
     """
 
     def authenticate(self, request):

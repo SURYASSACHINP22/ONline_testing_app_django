@@ -1,5 +1,8 @@
 """
 LLD: Decorator pattern – reusable login check for candidate-only views.
+
+Uses OTS.authentication.get_candidate_username_from_request so HTML pages accept the same
+HttpOnly access_token cookie set in myview._set_auth_cookies (layer 2), not only session auth.
 """
 from functools import wraps
 from django.http import HttpResponseRedirect
@@ -8,7 +11,11 @@ from .models import Candidate
 
 
 def candidate_login_required(view_func):
-    """Redirect to login if no valid JWT access token is present."""
+    """
+    Gate server-rendered views: no valid JWT → redirect to login.
+
+    On success: loads Candidate from DB, sets request.candidate for myview handlers.
+    """
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         username = get_candidate_username_from_request(request)
