@@ -44,6 +44,7 @@ class CandidateViewSet(viewsets.ModelViewSet):
     serializer_class = CandidateSerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ['get', 'patch', 'put', 'delete', 'head', 'options', 'post']
+    lookup_field = 'username'
 
     def get_permissions(self):
         if self.action in ['login', 'register']:
@@ -52,18 +53,38 @@ class CandidateViewSet(viewsets.ModelViewSet):
             return [IsAdminUserCustom()]
         return [IsAuthenticated()]
 
-    def get_queryset(self):
-        if is_admin_user(self.request.user):
-            return Candidate.objects.all()
-        username = getattr(self.request.user, 'username', None)
-        return Candidate.objects.filter(username=username)
-
     def get_serializer_class(self):
         if is_admin_user(self.request.user):
             return CandidateAdminSerializer
         if self.action in ['partial_update', 'update']:
             return CandidateSelfUpdateSerializer
         return CandidateSerializer
+
+    def get_queryset(self):
+        if is_admin_user(self.request.user):
+            username = self.request.query_params.get('username')
+            if username:
+                return Candidate.objects.filter(username=username)
+            return Candidate.objects.all()
+        username = getattr(self.request.user, 'username', None)
+        return Candidate.objects.filter(username=username)
+
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        """GET /OTS/api/candidates/profile/ or /OTS/api/candidates/profile/?username=<username>"""
+        if is_admin_user(request.user):
+            username = request.query_params.get('username')
+            if not username:
+                return Response({'error': 'Please provide username for admin profile lookup.'}, status=status.HTTP_400_BAD_REQUEST)
+            candidate = Candidate.objects.filter(username=username).first()
+            if not candidate:
+                return Response({'error': 'Candidate not found.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response(CandidateAdminSerializer(candidate).data)
+
+        candidate = Candidate.objects.filter(username=getattr(request.user, 'username', None)).first()
+        if not candidate:
+            return Response({'error': 'Candidate not found.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CandidateSerializer(candidate).data)
 
     def update(self, request, *args, **kwargs):
         if not is_admin_user(request.user):
@@ -158,6 +179,13 @@ class QuestionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     http_method_names = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
 
+    def get_queryset(self):
+        queryset = Question.objects.all()
+        qid = self.request.query_params.get('qid')
+        if qid:
+            queryset = queryset.filter(qid=qid)
+        return queryset
+
     def get_serializer_class(self):
         # Admin/staff → QuestionAdminSerializer (includes ans). Candidate → QuestionSerializer (no ans).
         if is_admin_user(self.request.user):
@@ -191,9 +219,21 @@ class ResultViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'head', 'options']
 
     def get_queryset(self):
+        resultid = self.request.query_params.get('resultid')
+        username = self.request.query_params.get('username')
+
         if is_admin_user(self.request.user):
-            return Result.objects.all()
-        return Result.objects.filter(username__username=self.request.user.username)
+            queryset = Result.objects.all()
+            if resultid:
+                queryset = queryset.filter(resultid=resultid)
+            if username:
+                queryset = queryset.filter(username__username=username)
+            return queryset
+
+        queryset = Result.objects.filter(username__username=self.request.user.username)
+        if resultid:
+            queryset = queryset.filter(resultid=resultid)
+        return queryset
 
     def create(self, request, *args, **kwargs):
         return Response({'error': 'Use submit_test endpoint to create results.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
