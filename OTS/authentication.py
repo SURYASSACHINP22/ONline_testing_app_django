@@ -14,6 +14,7 @@ from rest_framework import exceptions
 from .models import Candidate
 from . import services
 
+
 class CandidateBackend(BaseBackend):
     """
     Custom authentication backend for Candidate model to work with JWT
@@ -35,6 +36,7 @@ class CandidateBackend(BaseBackend):
             return CandidateUser(candidate)
         except Candidate.DoesNotExist:
             return None
+
 
 class CandidateUser:
     """

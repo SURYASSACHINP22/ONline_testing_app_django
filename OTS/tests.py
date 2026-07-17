@@ -75,6 +75,7 @@ class SecurityHardeningTests(TestCase):
         self._login_candidate()
         response = self.client.get('/OTS/api/questions/')
         self.assertEqual(response.status_code, 200)
-        payload = response.data['results'] if isinstance(response.data, dict) and 'results' in response.data else response.data
+        payload = response.data['results'] if isinstance(
+            response.data, dict) and 'results' in response.data else response.data
         self.assertTrue(payload)
         self.assertNotIn('ans', payload[0])

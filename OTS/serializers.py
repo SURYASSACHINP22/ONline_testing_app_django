@@ -10,6 +10,7 @@ Security ties:
 from rest_framework import serializers
 from .models import Candidate, Question, Result, MembershipPlan
 
+
 class MembershipPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = MembershipPlan
@@ -21,9 +22,10 @@ class MembershipPlanAdminSerializer(serializers.ModelSerializer):
         model = MembershipPlan
         fields = '__all__'
 
+
 class CandidateSerializer(serializers.ModelSerializer):
     membership_plan = MembershipPlanSerializer(read_only=True)
-    
+
     class Meta:
         model = Candidate
         fields = ['username', 'name', 'test_attempted', 'points', 'membership_plan']
@@ -69,7 +71,7 @@ class QuestionAdminSerializer(serializers.ModelSerializer):
 
 class ResultSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='username.username', read_only=True)
-    
+
     class Meta:
         model = Result
         fields = ['resultid', 'username', 'date', 'attempt', 'right', 'wrong', 'points']

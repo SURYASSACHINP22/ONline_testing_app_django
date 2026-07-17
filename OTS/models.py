@@ -47,8 +47,9 @@ class Candidate(models.Model):
     def __str__(self):
         return self.username
 
+
 class Question(models.Model):
-    qid = models.BigAutoField(primary_key=True,auto_created=True)
+    qid = models.BigAutoField(primary_key=True, auto_created=True)
     que = models.TextField()
     a = models.CharField(max_length=255)
     b = models.CharField(max_length=255)

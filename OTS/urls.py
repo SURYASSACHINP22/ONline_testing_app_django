@@ -2,8 +2,27 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-from OTS.myview import *
-from OTS.api_views import CandidateViewSet, QuestionViewSet, ResultViewSet, MembershipPlanViewSet, CustomTokenObtainPairView
+from OTS.myview import (
+    welcome,
+    candidateRegistrationForm,
+    candidateRegistration,
+    loginView,
+    candidateHome,
+    testPaper,
+    calculateTestResult,
+    testResultHistory,
+    showTestResult,
+    logoutView,
+    deleteAccountView,
+    membershipPlansView,
+)
+from OTS.api_views import (
+    CandidateViewSet,
+    QuestionViewSet,
+    ResultViewSet,
+    MembershipPlanViewSet,
+    CustomTokenObtainPairView,
+)
 
 app_name = 'OTS'
 

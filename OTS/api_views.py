@@ -29,6 +29,7 @@ from .serializers import (
 from .permissions import IsAdminUserCustom, IsAdminOrReadOnly, is_admin_user
 from . import services
 
+
 class CandidateViewSet(viewsets.ModelViewSet):
     """
     /OTS/api/candidates/
@@ -75,7 +76,10 @@ class CandidateViewSet(viewsets.ModelViewSet):
         if is_admin_user(request.user):
             username = request.query_params.get('username')
             if not username:
-                return Response({'error': 'Please provide username for admin profile lookup.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Please provide username for admin profile lookup.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             candidate = Candidate.objects.filter(username=username).first()
             if not candidate:
                 return Response({'error': 'Candidate not found.'}, status=status.HTTP_404_NOT_FOUND)
@@ -88,11 +92,17 @@ class CandidateViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         if not is_admin_user(request.user):
-            return Response({'error': 'Use PATCH for updating profile name only.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+            return Response(
+                {'error': 'Use PATCH for updating profile name only.'},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
         return super().update(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        return Response({'error': 'Use register endpoint to create candidate.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(
+            {'error': 'Use register endpoint to create candidate.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     def destroy(self, request, *args, **kwargs):
         if not is_admin_user(request.user):
@@ -173,6 +183,7 @@ class CandidateViewSet(viewsets.ModelViewSet):
             return [throttle]
         return super().get_throttles()
 
+
 class QuestionViewSet(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
@@ -212,6 +223,7 @@ class QuestionViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Only admin can delete questions.'}, status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
+
 class ResultViewSet(viewsets.ModelViewSet):
     queryset = Result.objects.all()
     serializer_class = ResultSerializer
@@ -236,12 +248,16 @@ class ResultViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
-        return Response({'error': 'Use submit_test endpoint to create results.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        return Response(
+            {'error': 'Use submit_test endpoint to create results.'},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
 
     @action(detail=False, methods=['post'])
     def submit_test(self, request):
         services.calculate_and_save_result(request.user.username, request.data)
         return Response({'message': 'Test submitted successfully'})
+
 
 class MembershipPlanViewSet(viewsets.ModelViewSet):
     queryset = MembershipPlan.objects.filter(is_active=True)
@@ -280,6 +296,8 @@ class MembershipPlanViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 # Custom token views for better error handling
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
@@ -295,5 +313,5 @@ class CustomTokenObtainPairView(TokenObtainPairView):
                 if candidate:
                     response.data['candidate'] = CandidateSerializer(candidate).data
             return response
-        except Exception as e:
+        except Exception:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
