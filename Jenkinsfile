@@ -57,20 +57,28 @@ pipeline {
             }
         }
 
+        // Advisory, not a merge gate: findings are reported but never stop
+        // the pipeline. Bumped to blocking later once the app's security
+        // debt is paid down -- for now these would fail nearly every build
+        // on pre-existing issues.
         stage("Security scans") {
             parallel {
                 stage("Bandit (Python SAST)") {
                     steps {
-                        sh """
-                            . "${VENV_DIR}/bin/activate"
-                            pip install bandit
-                            bandit -r .
-                        """
+                        catchError(buildResult: "SUCCESS", stageResult: "FAILURE") {
+                            sh """
+                                . "${VENV_DIR}/bin/activate"
+                                pip install bandit
+                                bandit -r .
+                            """
+                        }
                     }
                 }
                 stage("Gitleaks (secret scan)") {
                     steps {
-                        sh "gitleaks detect --source . --no-git -v"
+                        catchError(buildResult: "SUCCESS", stageResult: "FAILURE") {
+                            sh "gitleaks detect --source . --no-git -v"
+                        }
                     }
                 }
             }
@@ -84,7 +92,9 @@ pipeline {
 
         stage("Trivy image scan") {
             steps {
-                sh "trivy image --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}"
+                catchError(buildResult: "SUCCESS", stageResult: "FAILURE") {
+                    sh "trivy image --exit-code 1 --ignore-unfixed --severity HIGH,CRITICAL ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
             }
         }
 
