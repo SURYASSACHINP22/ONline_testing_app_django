@@ -9,6 +9,10 @@ pipeline {
         APP_BRANCH   = "main"
         IMAGE_NAME   = "ots-django-app"
         IMAGE_TAG    = "${env.BUILD_NUMBER}"
+        // Kept outside the workspace so flake8/bandit/gitleaks never walk
+        // into it -- avoids scanning third-party library code as if it
+        // were ours (which caused false failures on both tools).
+        VENV_DIR     = "/tmp/jenkins-venv-${env.BUILD_TAG}"
     }
 
     options {
@@ -26,8 +30,8 @@ pipeline {
         stage("Install dependencies") {
             steps {
                 sh """
-                    python3 -m venv .venv
-                    . .venv/bin/activate
+                    python3 -m venv "${VENV_DIR}"
+                    . "${VENV_DIR}/bin/activate"
                     pip install --upgrade pip
                     pip install -r requirements.txt
                 """
@@ -37,7 +41,7 @@ pipeline {
         stage("Run Django unit tests") {
             steps {
                 sh """
-                    . .venv/bin/activate
+                    . "${VENV_DIR}/bin/activate"
                     python manage.py test
                 """
             }
@@ -46,7 +50,7 @@ pipeline {
         stage("Lint") {
             steps {
                 sh """
-                    . .venv/bin/activate
+                    . "${VENV_DIR}/bin/activate"
                     pip install flake8
                     flake8 .
                 """
@@ -58,9 +62,9 @@ pipeline {
                 stage("Bandit (Python SAST)") {
                     steps {
                         sh """
-                            . .venv/bin/activate
+                            . "${VENV_DIR}/bin/activate"
                             pip install bandit
-                            bandit -r . -x .venv
+                            bandit -r .
                         """
                     }
                 }
@@ -110,6 +114,9 @@ pipeline {
     }
 
     post {
+        always {
+            sh "rm -rf ${VENV_DIR} || true"
+        }
         failure {
             echo "Build failed -- TODO: trigger rollback"
         }
