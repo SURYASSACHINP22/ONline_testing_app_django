@@ -9,3 +9,8 @@ service:
 persistence:
   size: 1Gi
   mountPath: /app/data
+
+ingress:
+  enabled: true
+  host: 13.203.126.12.nip.io
+  clusterIssuer: letsencrypt-prod
