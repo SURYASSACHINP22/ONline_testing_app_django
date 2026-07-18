@@ -120,7 +120,7 @@ pipeline {
                         -n ots --create-namespace \\
                         --set image.repository=${IMAGE_NAME} \\
                         --set image.tag=${IMAGE_TAG} \\
-                        --atomic --wait --timeout 5m
+                        --rollback-on-failure --wait --timeout 5m
                 """
             }
         }
