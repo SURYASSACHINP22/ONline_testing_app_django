@@ -1,0 +1,11 @@
+image:
+  repository: ots-django-app
+  tag: latest
+  pullPolicy: Never
+
+service:
+  port: 8000
+
+persistence:
+  size: 1Gi
+  mountPath: /app/data

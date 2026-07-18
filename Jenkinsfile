@@ -1,6 +1,6 @@
 // Pipeline for the OTS Django app (ONline_testing_app_django).
-// Checkout/test/build stages are real. Push-to-registry and deploy-to-k3s
-// are still TODO -- no registry or Helm chart for the app exists yet.
+// Checkout/test/build/deploy stages are all real. The app runs on k3s via
+// the Helm chart at helm/ots-django-app, image loaded locally (no registry).
 pipeline {
     agent any
 
@@ -104,21 +104,33 @@ pipeline {
             }
         }
 
-        stage("Push image to registry") {
+        stage("Load image into k3s") {
+            // No registry -- Jenkins and k3s run on the same host, so the
+            // built image is imported straight into containerd's local
+            // store instead of being pushed anywhere.
             steps {
-                sh "echo TODO-push-${IMAGE_NAME}-${IMAGE_TAG}-to-registry"
+                sh "docker save ${IMAGE_NAME}:${IMAGE_TAG} | sudo /usr/local/bin/k3s ctr images import -"
             }
         }
 
         stage("Deploy") {
             steps {
-                sh "echo TODO-deploy-${IMAGE_NAME}-${IMAGE_TAG}"
+                sh """
+                    helm upgrade --install ots-django-app helm/ots-django-app \\
+                        -n ots --create-namespace \\
+                        --set image.repository=${IMAGE_NAME} \\
+                        --set image.tag=${IMAGE_TAG} \\
+                        --wait --timeout 5m
+                """
             }
         }
 
         stage("Health check") {
             steps {
-                sh "echo TODO-health-check"
+                sh """
+                    SVC_IP=\$(kubectl get svc ots-django-app -n ots -o jsonpath='{.spec.clusterIP}')
+                    curl -f --max-time 10 "http://\${SVC_IP}:8000/"
+                """
             }
         }
     }

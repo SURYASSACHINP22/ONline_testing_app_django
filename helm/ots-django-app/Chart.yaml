@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ots-django-app
+description: OTS Online Testing System Django application
+type: application
+version: 0.1.0
+appVersion: "1.0"
